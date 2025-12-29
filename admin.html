@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Dashboard Admin - Confirmações do Noivado"
+    />
+    <meta name="author" content="Ginelma & Ariclenes" />
+    <title>Dashboard Admin - Noivado Ginelma & Ariclenes</title>
+
+    <!-- Fontes do Google -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600&family=Playfair+Display:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- CSS compartilhado -->
+    <link rel="stylesheet" href="style.css" />
+
+    <!-- CSS específico do admin -->
+    <style>
+      /* Estilos específicos para a página admin */
+      .admin-body {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        padding: 20px;
+        font-family: "Montserrat", sans-serif;
+      }
+
+      .login-container {
+        max-width: 400px;
+        margin: 100px auto;
+        background: white;
+        border-radius: 15px;
+        padding: 40px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        text-align: center;
+      }
+
+      .login-title {
+        font-family: "Playfair Display", serif;
+        font-size: 2rem;
+        color: #333;
+        margin-bottom: 10px;
+      }
+
+      .login-subtitle {
+        color: #666;
+        margin-bottom: 30px;
+        font-size: 0.9rem;
+      }
+
+      .login-input {
+        width: 100%;
+        padding: 12px 15px;
+        margin-bottom: 20px;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        font-family: "Montserrat", sans-serif;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+      }
+
+      .login-input:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+      }
+
+      .login-button {
+        width: 100%;
+        padding: 15px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-family: "Montserrat", sans-serif;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+
+      .login-button:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+      }
+
+      .login-error {
+        color: #e74c3c;
+        font-size: 0.9rem;
+        margin-top: 10px;
+        display: none;
+      }
+
+      /* Dashboard após login */
+      .dashboard-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 15px;
+        padding: 30px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        display: none;
+      }
+
+      .back-button {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 20px;
+        background: #f8f9fa;
+        color: #333;
+        text-decoration: none;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        font-family: "Montserrat", sans-serif;
+        font-weight: 500;
+        transition: all 0.3s ease;
+      }
+
+      .back-button:hover {
+        background: #e9ecef;
+      }
+    </style>
+  </head>
+  <body class="admin-body">
+    <!-- Tela de Login -->
+    <div id="loginScreen" class="login-container">
+      <h1 class="login-title">Dashboard Admin</h1>
+      <p class="login-subtitle">
+        Noivado Ginelma & Ariclenes - 14 de Fevereiro de 2026
+      </p>
+
+      <form id="loginForm">
+        <input
+          type="password"
+          id="adminPassword"
+          class="login-input"
+          placeholder="Digite a senha de acesso"
+          required
+        />
+        <div id="loginError" class="login-error">
+          Senha incorreta. Tente novamente.
+        </div>
+        <button type="submit" class="login-button">Acessar Dashboard</button>
+      </form>
+    </div>
+
+    <!-- Dashboard (aparece após login) -->
+    <div id="dashboardScreen" class="dashboard-container">
+      <a href="index.html" class="back-button">
+        <span>←</span> Voltar ao Site
+      </a>
+
+      <div class="dashboard-header">
+        <div>
+          <h2 class="dashboard-title">Dashboard de Confirmações</h2>
+          <p class="dashboard-subtitle">
+            Noivado Ginelma & Ariclenes - 14 de Fevereiro de 2026
+          </p>
+          <p
+            id="lastUpdate"
+            class="dashboard-subtitle"
+            style="font-size: 0.8rem; color: #666; margin-top: 5px"
+          ></p>
+        </div>
+      </div>
+
+      <div class="dashboard-controls">
+        <button class="control-button" onclick="exportToCSV()">
+          <span>📥</span> Exportar CSV
+        </button>
+        <button class="control-button secondary" onclick="printDashboard()">
+          <span>🖨️</span> Imprimir Relatório
+        </button>
+        <button class="control-button danger" onclick="clearAllData()">
+          <span>🗑️</span> Limpar Todos os Dados
+        </button>
+        <button class="control-button success" onclick="refreshDashboard()">
+          <span>🔄</span> Atualizar
+        </button>
+      </div>
+
+      <h3 class="section-title">Estatísticas em Tempo Real</h3>
+      <div class="stats-container" id="dashboardStats">
+        <!-- As estatísticas serão preenchidas via JavaScript -->
+      </div>
+
+      <h3 class="section-title">Lista de Convidados Confirmados</h3>
+      <div id="guestList">
+        <!-- A lista será preenchida via JavaScript -->
+      </div>
+
+      <div
+        class="dashboard-footer"
+        style="
+          margin-top: 50px;
+          padding-top: 20px;
+          border-top: 2px solid #f0f0f0;
+          text-align: center;
+        "
+      >
+        <p style="color: #666; font-size: 0.9rem">
+          Total de armazenamento usado: <span id="storageSize">0 KB</span> |
+          <button
+            onclick="logout()"
+            style="
+              background: none;
+              border: none;
+              color: #667eea;
+              cursor: pointer;
+              margin-left: 10px;
+            "
+          >
+            Sair
+          </button>
+        </p>
+      </div>
+    </div>
+
+    <!-- JavaScript específico do admin -->
+    <script src="admin-script.js"></script>
+  </body>
+</html>
