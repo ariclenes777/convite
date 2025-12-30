@@ -30,15 +30,15 @@
 
     <!-- CSS externo -->
     <link rel="stylesheet" href="style.css" />
+
+    <!-- Configuração do Google Sheets -->
     <script>
       // CONFIGURAÇÃO IMPORTANTE: Substitua com SUA URL do Google Apps Script
       const GOOGLE_SCRIPT_URL =
-        "https://script.google.com/macros/s/SUA_ID/exec";
+        "https://script.google.com/macros/s/AKfycbxH57xbqSxIIYym3IL4MYK2MLmp0hHgKnrHGAVh6dgcGhtdE33DQUoBv8e7x748yUKO/exec";
     </script>
   </head>
   <body>
-    <!-- JavaScript externo -->
-    <script src="script.js"></script>
     <!-- Relógio flutuante de contagem regressiva -->
     <div id="floating-countdown" class="floating-countdown">
       <div class="countdown-header">Faltam</div>
@@ -69,7 +69,26 @@
         <h2 class="popup-title">Confirmar Presença</h2>
 
         <div id="successMessage" class="success-message">
-          Dados enviados com sucesso! Redirecionando para o WhatsApp...
+          <p>✅ Dados enviados com sucesso!</p>
+          <p>Redirecionando para o WhatsApp...</p>
+        </div>
+
+        <div
+          id="errorMessage"
+          class="error-message"
+          style="
+            display: none;
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+          "
+        >
+          <p>
+            ⚠️ Erro ao enviar dados. Por favor, tente novamente ou contate-nos
+            diretamente.
+          </p>
         </div>
 
         <form id="confirmationForm">
@@ -95,6 +114,20 @@
               class="form-input"
               placeholder="Nome do(a) acompanhante - Opcional"
             />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="phoneNumber">Telefone *</label>
+            <input
+              type="tel"
+              id="phoneNumber"
+              class="form-input"
+              placeholder="Ex: +244 900 000 000"
+              required
+            />
+            <div id="phoneError" class="error-message">
+              Por favor, insira um número de telefone válido.
+            </div>
           </div>
 
           <div class="form-group">
@@ -153,7 +186,6 @@
         </div>
         <h2 class="hero-subtitle">Ginelma & Ariclenes</h2>
 
-        <!-- DATA NO BANNER - NÃO É MAIS CLICÁVEL -->
         <p class="hero-date">14 de Fevereiro de 2026</p>
       </div>
     </section>
@@ -220,7 +252,6 @@
     <footer class="footer">
       <div class="footer-content">
         <h3 class="footer-names">Ginelma & Ariclenes</h3>
-        <!-- DATA NO FOOTER - NÃO É MAIS CLICÁVEL -->
         <div class="footer-date">14 de Fevereiro de 2026</div>
 
         <div class="footer-divider"></div>
@@ -238,5 +269,8 @@
         <p class="footer-copyright">Com amor, Ginelma & Ariclenes © 2025</p>
       </div>
     </footer>
+
+    <!-- JavaScript externo -->
+    <script src="script.js"></script>
   </body>
 </html>
