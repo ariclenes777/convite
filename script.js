@@ -6,8 +6,8 @@
 let currentSlide = 0;
 const slides = document.querySelectorAll(".slide");
 
-// ========== CONFIGURAÇÃO IMPORTANTE ==========
-// Substitua com SUA URL do Google Apps Script
+// ========== CONFIGURAÇÃO DO GOOGLE SHEETS ==========
+// COLE SUA URL DO GOOGLE APPS SCRIPT AQUI:
 const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxH57xbqSxIIYym3IL4MYK2MLmp0hHgKnrHGAVh6dgcGhtdE33DQUoBv8e7x748yUKO/exec";
 
 // ========== FUNÇÃO PARA ENVIAR DADOS PARA GOOGLE SHEETS ==========
