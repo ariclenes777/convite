@@ -4,7 +4,11 @@
  */
 // ========== CONFIGURAÇÃO DO ADMIN ==========
 const ADMIN_PASSWORD = "noivado2026"; // Senha padrão - MUDE ESTA SENHA!
+
+// ========== CONFIGURAÇÃO DO GOOGLE SHEETS ==========
+// COLE SUA URL DO GOOGLE APPS SCRIPT AQUI (MESMA DO script.js):
 const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxH57xbqSxIIYym3IL4MYK2MLmp0hHgKnrHGAVh6dgcGhtdE33DQUoBv8e7x748yUKO/exec";
+
 
 // ========== FUNÇÕES PARA O DASHBOARD ==========
 async function fetchDataFromGoogleSheets() {
