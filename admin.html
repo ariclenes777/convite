@@ -3,274 +3,255 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Save the Date - Fevereiro 14 de 2026" />
     <meta
-      name="keywords"
-      content="Alambamento, save the date, Nelma, Ariclenes, Pedido de Noivado"
+      name="description"
+      content="Dashboard Admin - Confirmações do Noivado"
     />
     <meta name="author" content="Ginelma & Ariclenes" />
-    <title>Save the Date - Ginelma & Ariclenes</title>
+    <title>Dashboard Admin - Noivado Ginelma & Ariclenes</title>
 
     <!-- Fontes do Google -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Parisienne&family=Great+Vibes&family=Dancing+Script:wght@400;700&family=Playfair+Display:wght@400;700&family=Montserrat:wght@300;400;600&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600&family=Playfair+Display:wght@400;700&display=swap"
       rel="stylesheet"
     />
 
-    <!-- Metadados para mobile -->
-    <meta name="theme-color" content="#b8860b" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta
-      name="apple-mobile-web-app-status-bar-style"
-      content="black-translucent"
-    />
-    <link rel="apple-touch-icon" href="icon.png" />
-
-    <!-- CSS externo -->
+    <!-- CSS compartilhado -->
     <link rel="stylesheet" href="style.css" />
 
-    <!-- Configuração do Google Sheets -->
-    <script>
-      // CONFIGURAÇÃO IMPORTANTE: Substitua com SUA URL do Google Apps Script
-      const GOOGLE_SCRIPT_URL =
-        "https://script.google.com/macros/s/AKfycbxH57xbqSxIIYym3IL4MYK2MLmp0hHgKnrHGAVh6dgcGhtdE33DQUoBv8e7x748yUKO/exec";
-    </script>
+    <!-- CSS específico do admin -->
+    <style>
+      /* Estilos específicos para a página admin */
+      .admin-body {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        padding: 20px;
+        font-family: "Montserrat", sans-serif;
+      }
+
+      .login-container {
+        max-width: 400px;
+        margin: 100px auto;
+        background: white;
+        border-radius: 15px;
+        padding: 40px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        text-align: center;
+      }
+
+      .login-title {
+        font-family: "Playfair Display", serif;
+        font-size: 2rem;
+        color: #333;
+        margin-bottom: 10px;
+      }
+
+      .login-subtitle {
+        color: #666;
+        margin-bottom: 30px;
+        font-size: 0.9rem;
+      }
+
+      .login-input {
+        width: 100%;
+        padding: 12px 15px;
+        margin-bottom: 20px;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        font-family: "Montserrat", sans-serif;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+      }
+
+      .login-input:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+      }
+
+      .login-button {
+        width: 100%;
+        padding: 15px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-family: "Montserrat", sans-serif;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+
+      .login-button:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+      }
+
+      .login-error {
+        color: #e74c3c;
+        font-size: 0.9rem;
+        margin-top: 10px;
+        display: none;
+      }
+
+      /* Dashboard após login */
+      .dashboard-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 15px;
+        padding: 30px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        display: none;
+      }
+
+      .back-button {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 20px;
+        background: #f8f9fa;
+        color: #333;
+        text-decoration: none;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        font-family: "Montserrat", sans-serif;
+        font-weight: 500;
+        transition: all 0.3s ease;
+      }
+
+      .back-button:hover {
+        background: #e9ecef;
+      }
+
+      .loading {
+        text-align: center;
+        padding: 40px;
+        color: #666;
+      }
+
+      .loading-spinner {
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid #667eea;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 20px;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+    </style>
   </head>
-  <body>
-    <!-- Relógio flutuante de contagem regressiva -->
-    <div id="floating-countdown" class="floating-countdown">
-      <div class="countdown-header">Faltam</div>
-      <div class="countdown-timer">
-        <div class="countdown-item">
-          <span class="countdown-number" id="days">0</span>
-          <span class="countdown-label">Dias</span>
-        </div>
-        <div class="countdown-item">
-          <span class="countdown-number" id="hours">0</span>
-          <span class="countdown-label">Horas</span>
-        </div>
-        <div class="countdown-item">
-          <span class="countdown-number" id="minutes">0</span>
-          <span class="countdown-label">Min</span>
-        </div>
-        <div class="countdown-item">
-          <span class="countdown-number" id="seconds">0</span>
-          <span class="countdown-label">Seg</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- POPUP DE CONFIRMAÇÃO -->
-    <div id="confirmationPopup" class="confirmation-popup-overlay">
-      <div class="confirmation-popup">
-        <button class="popup-close" id="closePopup">×</button>
-        <h2 class="popup-title">Confirmar Presença</h2>
-
-        <div id="successMessage" class="success-message">
-          <p>✅ Dados enviados com sucesso!</p>
-          <p>Redirecionando para o WhatsApp...</p>
-        </div>
-
-        <div
-          id="errorMessage"
-          class="error-message"
-          style="
-            display: none;
-            background: #f8d7da;
-            color: #721c24;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-          "
-        >
-          <p>
-            ⚠️ Erro ao enviar dados. Por favor, tente novamente ou contate-nos
-            diretamente.
-          </p>
-        </div>
-
-        <form id="confirmationForm">
-          <div class="form-group">
-            <label class="form-label" for="guestName">Seu Nome *</label>
-            <input
-              type="text"
-              id="guestName"
-              class="form-input"
-              placeholder="Digite seu nome completo"
-              required
-            />
-            <div id="nameError" class="error-message">
-              Por favor, insira seu nome.
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label class="form-label" for="accompaniment">Acompanhante</label>
-            <input
-              type="text"
-              id="accompaniment"
-              class="form-input"
-              placeholder="Nome do(a) acompanhante - Opcional"
-            />
-          </div>
-
-          <div class="form-group">
-            <label class="form-label" for="phoneNumber">Telefone *</label>
-            <input
-              type="tel"
-              id="phoneNumber"
-              class="form-input"
-              placeholder="Ex: +244 900 000 000"
-              required
-            />
-            <div id="phoneError" class="error-message">
-              Por favor, insira um número de telefone válido.
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label class="form-label" for="guestType">Convidado por *</label>
-            <select id="guestType" class="form-select" required>
-              <option value="">Selecione uma opção</option>
-              <option value="noiva">Parte da Ginelma</option>
-              <option value="noivo">Parte do Ariclenes</option>
-            </select>
-            <div id="typeError" class="error-message">
-              Por favor, selecione por quem é convidado.
-            </div>
-          </div>
-
-          <button type="submit" class="popup-button" id="submitButton">
-            <span class="whatsapp-icon">💬</span> Enviar Confirmação
-          </button>
-
-          <p
-            style="
-              margin-top: 15px;
-              font-size: 0.8rem;
-              color: #666;
-              text-align: center;
-            "
-          >
-            * Campos obrigatórios
-          </p>
-        </form>
-      </div>
-    </div>
-
-    <!-- Seção Hero com Slideshow -->
-    <section class="hero-section">
-      <div class="slideshow-container">
-        <!-- Slides com imagens dos noivos -->
-        <div class="slide active" id="slide1"></div>
-        <div class="slide" id="slide2"></div>
-        <div class="slide" id="slide3"></div>
-        <div class="slide-overlay"></div>
-      </div>
-
-      <div class="hero-content">
-        <h1 class="hero-title">Junte-se a nós para celebrar</h1>
-        <div class="heart-divider">
-          <div class="heart-divider-line"></div>
-          <div class="animated-heart">♥</div>
-          <div class="heart-divider-line"></div>
-        </div>
-        <p class="hero-announcement">O nosso noivado</p>
-
-        <div class="heart-divider">
-          <div class="heart-divider-line"></div>
-          <div class="animated-heart">♥</div>
-          <div class="heart-divider-line"></div>
-        </div>
-        <h2 class="hero-subtitle">Ginelma & Ariclenes</h2>
-
-        <p class="hero-date">14 de Fevereiro de 2026</p>
-      </div>
-    </section>
-
-    <!-- Seção de Detalhes do Evento -->
-    <section class="event-details-section">
-      <div class="section-header">
-        <h2 class="section-title">Detalhes do Evento</h2>
-        <p class="section-subtitle">
-          Muitos são os planos no coração do homem, mas o que prevalece é o
-          propósito do Senhor...<br /><br /><strong>Provérbios 19:21</strong>
-        </p>
-      </div>
-
-      <div class="cards-container">
-        <!-- Card 1: Encontro das Famílias -->
-        <div class="event-card">
-          <div class="card-header">
-            <h3 class="card-title">Encontro das Famílias</h3>
-          </div>
-          <div class="card-content">
-            <div class="card-time">14:00h</div>
-            <p class="card-description">
-              É neste momento que DEUS vai unir Icolo e Bengo e Malanje, e eles
-              se tornarão um só povo: duas tribos, duas famílias e uma só união.
-            </p>
-          </div>
-        </div>
-
-        <!-- Card 2: Celebração -->
-        <div class="event-card">
-          <div class="card-header">
-            <h3 class="card-title">Celebração</h3>
-          </div>
-          <div class="card-content">
-            <div class="card-time">15:30h</div>
-            <p class="card-description">
-              Recepção e festa para celebrar nosso noivado com todos os amigos e
-              familiares. Música, dança, comidas especiais e momentos
-              inesquecíveis.
-            </p>
-            <p class="card-hashtag">
-              <strong>#NadadeEnergiasNegativas!</strong>
-            </p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Seção de Confirmação -->
-    <section class="confirmation-section">
-      <h2 class="confirmation-title">Confirme Sua Presença</h2>
-      <p class="confirmation-subtitle">
-        Para nos ajudar nos preparativos, pedimos que confirme sua presença até
-        15 de Janeiro de 2026.
+  <body class="admin-body">
+    <!-- Tela de Login -->
+    <div id="loginScreen" class="login-container">
+      <h1 class="login-title">Dashboard Admin</h1>
+      <p class="login-subtitle">
+        Noivado Ginelma & Ariclenes - 14 de Fevereiro de 2026
       </p>
 
-      <button class="whatsapp-button" id="openConfirmationButton">
-        <span class="whatsapp-icon">💬</span> Confirmar Presença
-      </button>
-    </section>
+      <form id="loginForm">
+        <input
+          type="password"
+          id="adminPassword"
+          class="login-input"
+          placeholder="Digite a senha de acesso"
+          required
+        />
+        <div id="loginError" class="login-error">
+          Senha incorreta. Tente novamente.
+        </div>
+        <button type="submit" class="login-button">Acessar Dashboard</button>
+      </form>
+    </div>
 
-    <!-- Footer -->
-    <footer class="footer">
-      <div class="footer-content">
-        <h3 class="footer-names">Ginelma & Ariclenes</h3>
-        <div class="footer-date">14 de Fevereiro de 2026</div>
+    <!-- Dashboard (aparece após login) -->
+    <div id="dashboardScreen" class="dashboard-container">
+      <a href="index.html" class="back-button">
+        <span>←</span> Voltar ao Site
+      </a>
 
-        <div class="footer-divider"></div>
-
-        <p class="footer-location">
-          <strong>Local:</strong> Quinta Kabezo, Kilamba, Luanda
-        </p>
-
-        <p class="footer-message">
-          Vens ou Vais? Sua presença será o nosso maior presente!
-        </p>
-
-        <div class="footer-divider"></div>
-
-        <p class="footer-copyright">Com amor, Ginelma & Ariclenes © 2025</p>
+      <div class="dashboard-header">
+        <div>
+          <h2 class="dashboard-title">Dashboard de Confirmações</h2>
+          <p class="dashboard-subtitle">
+            Noivado Ginelma & Ariclenes - 14 de Fevereiro de 2026
+          </p>
+          <p
+            id="lastUpdate"
+            class="dashboard-subtitle"
+            style="font-size: 0.8rem; color: #666; margin-top: 5px"
+          ></p>
+        </div>
       </div>
-    </footer>
 
-    <!-- JavaScript externo -->
-    <script src="script.js"></script>
+      <div class="dashboard-controls">
+        <button class="control-button" onclick="exportToCSV()">
+          <span>📥</span> Exportar CSV
+        </button>
+        <button class="control-button secondary" onclick="printDashboard()">
+          <span>🖨️</span> Imprimir Relatório
+        </button>
+        <button class="control-button success" onclick="refreshDashboard()">
+          <span>🔄</span> Atualizar Dados
+        </button>
+      </div>
+
+      <div id="loadingData" class="loading">
+        <div class="loading-spinner"></div>
+        <p>Carregando dados do Google Sheets...</p>
+      </div>
+
+      <div id="dashboardContent" style="display: none">
+        <h3 class="section-title">Estatísticas em Tempo Real</h3>
+        <div class="stats-container" id="dashboardStats">
+          <!-- As estatísticas serão preenchidas via JavaScript -->
+        </div>
+
+        <h3 class="section-title">Lista de Convidados Confirmados</h3>
+        <div id="guestList">
+          <!-- A lista será preenchida via JavaScript -->
+        </div>
+      </div>
+
+      <div
+        class="dashboard-footer"
+        style="
+          margin-top: 50px;
+          padding-top: 20px;
+          border-top: 2px solid #f0f0f0;
+          text-align: center;
+        "
+      >
+        <p style="color: #666; font-size: 0.9rem">
+          <button
+            onclick="logout()"
+            style="
+              background: none;
+              border: none;
+              color: #667eea;
+              cursor: pointer;
+              margin-left: 10px;
+              text-decoration: underline;
+            "
+          >
+            Sair do Dashboard
+          </button>
+        </p>
+      </div>
+    </div>
+
+    <!-- JavaScript específico do admin -->
+    <script src="admin-script.js"></script>
   </body>
 </html>
