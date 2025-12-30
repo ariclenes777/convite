@@ -4,151 +4,163 @@
  */
 // ========== CONFIGURAÇÃO DO ADMIN ==========
 const ADMIN_PASSWORD = "noivado2026"; // Senha padrão - MUDE ESTA SENHA!
-const GOOGLE_SHEETS_CONFIG = {
-    spreadsheetId: '1jpLK1Zq7PoQcBlCL7A-cu2CKwCjpGNphRnuF014oV5E', // MESMO ID DA PLANILHA
-    apiKey: 'AIzaSyBOgCloWbkLOBgHM08TnjTjd72ywRrjpfc', // MESMA API KEY
-    sheetName: 'Sheet1'
-};
+const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxH57xbqSxIIYym3IL4MYK2MLmp0hHgKnrHGAVh6dgcGhtdE33DQUoBv8e7x748yUKO/exec";
 
-// ========== FUNÇÕES PARA LER DO GOOGLE SHEETS ==========
-async function fetchConfirmationsFromSheets() {
+// ========== FUNÇÕES PARA O DASHBOARD ==========
+async function fetchDataFromGoogleSheets() {
     try {
-        const url = `https://sheets.googleapis.com/v4/spreadsheets/${GOOGLE_SHEETS_CONFIG.spreadsheetId}/values/${GOOGLE_SHEETS_CONFIG.sheetName}!A:F?key=${GOOGLE_SHEETS_CONFIG.apiKey}`;
+        showLoading(true);
+        
+        // Adicionar timestamp para evitar cache
+        const url = `${GOOGLE_SCRIPT_URL}?t=${Date.now()}`;
         
         const response = await fetch(url);
         
         if (!response.ok) {
-            throw new Error('Erro ao buscar dados da planilha');
+            throw new Error(`Erro HTTP: ${response.status}`);
         }
         
         const data = await response.json();
         
-        // Converter dados da planilha para formato interno
-        if (!data.values || data.values.length <= 1) {
-            return []; // Retorna vazio se só tiver cabeçalho ou nenhum dado
+        if (!data.success) {
+            throw new Error(data.message || 'Erro ao carregar dados');
         }
         
-        // Pular o cabeçalho (primeira linha)
-        const rows = data.values.slice(1);
+        return data.data || [];
         
-        return rows.map((row, index) => ({
-            id: index + 1,
-            timestamp: row[0] || '',
-            name: row[1] || '',
-            accompaniment: row[2] || '',
-            guestType: row[3]?.includes('Noiva') ? 'noiva' : 'noivo',
-            phone: row[4] || '',
-            confirmationDate: row[5] || ''
-        }));
     } catch (error) {
-        console.error('Erro ao buscar do Google Sheets:', error);
-        
-        // Fallback: usar localStorage
-        return getConfirmationsFromLocalStorage();
+        console.error('Erro ao buscar dados:', error);
+        throw error;
+    } finally {
+        showLoading(false);
     }
 }
 
-// Fallback: dados do localStorage
-function getConfirmationsFromLocalStorage() {
-    return JSON.parse(localStorage.getItem('weddingConfirmations')) || [];
+function showLoading(show) {
+    const loadingElement = document.getElementById('loadingData');
+    const contentElement = document.getElementById('dashboardContent');
+    
+    if (loadingElement) {
+        loadingElement.style.display = show ? 'block' : 'none';
+    }
+    
+    if (contentElement) {
+        contentElement.style.display = show ? 'none' : 'block';
+    }
 }
 
-// ========== FUNÇÕES PARA O DASHBOARD ==========
-async function getStatistics() {
-    const confirmations = await fetchConfirmationsFromSheets();
+function getStatistics(confirmations) {
     const total = confirmations.length;
     
     // Contar por tipo de convidado
     const countByType = confirmations.reduce((acc, conf) => {
-        acc[conf.guestType] = (acc[conf.guestType] || 0) + 1;
+        const type = conf.Tipo || conf.guestType || '';
+        if (type) {
+            acc[type] = (acc[type] || 0) + 1;
+        }
         return acc;
     }, {});
     
     // Contar acompanhantes
-    const withAccompaniment = confirmations.filter(conf => 
-        conf.accompaniment && conf.accompaniment.trim() !== ''
-    ).length;
+    const withAccompaniment = confirmations.filter(conf => {
+        const acc = conf.Acompanhante || conf.accompaniment || '';
+        return acc && acc.trim() !== '' && acc.trim() !== '-';
+    }).length;
     
     // Calcular estimativa total de pessoas
     let estimatedTotal = total;
     confirmations.forEach(conf => {
-        if (conf.accompaniment && conf.accompaniment.trim() !== '') {
+        const acc = conf.Acompanhante || conf.accompaniment || '';
+        if (acc && acc.trim() !== '' && acc.trim() !== '-') {
             // Se houver vírgulas, conta cada nome separado
-            const accompaniments = conf.accompaniment.split(',').length;
+            const accompaniments = acc.split(',').length;
             estimatedTotal += accompaniments;
         }
     });
+    
+    // Contar por data (últimos 7 dias)
+    const last7Days = confirmations.filter(conf => {
+        const dateStr = conf.Data || conf.timestamp || '';
+        if (!dateStr) return false;
+        
+        const confDate = new Date(dateStr);
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        
+        return confDate >= sevenDaysAgo;
+    }).length;
     
     return {
         total,
         countByType,
         withAccompaniment,
         estimatedTotal,
+        last7Days,
         confirmations
     };
 }
 
-async function displayStatistics() {
-    try {
-        const stats = await getStatistics();
-        const statsContainer = document.getElementById('dashboardStats');
-        
-        if (!statsContainer) return;
-        
-        statsContainer.innerHTML = `
-            <div class="stat-card">
-                <h3>Total de Confirmações</h3>
-                <div class="stat-number">${stats.total}</div>
-            </div>
-            <div class="stat-card">
-                <h3>Parte da Noiva</h3>
-                <div class="stat-number">${stats.countByType.noiva || 0}</div>
-            </div>
-            <div class="stat-card">
-                <h3>Parte do Noivo</h3>
-                <div class="stat-number">${stats.countByType.noivo || 0}</div>
-            </div>
-            <div class="stat-card">
-                <h3>Estimativa Total de Pessoas</h3>
-                <div class="stat-number">${stats.estimatedTotal}</div>
-                <small style="color: #666; font-size: 0.8rem;">(incluindo acompanhantes)</small>
-            </div>
-        `;
-        
-        // Atualizar lista de convidados
-        await displayGuestList(stats.confirmations);
-        
-        // Atualizar timestamp
-        document.getElementById('lastUpdate').textContent = 
-            `Última atualização: ${new Date().toLocaleTimeString('pt-BR')}`;
-        
-    } catch (error) {
-        console.error('Erro ao cargar estatísticas:', error);
-        document.getElementById('dashboardStats').innerHTML = `
-            <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: #666;">
-                <h3>Erro ao carregar dados</h3>
-                <p>Verifique a conexão e tente novamente.</p>
-                <button onclick="refreshDashboard()" style="margin-top: 20px; padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer;">
-                    Tentar Novamente
-                </button>
-            </div>
-        `;
-    }
+function displayStatistics(confirmations) {
+    const stats = getStatistics(confirmations);
+    const statsContainer = document.getElementById('dashboardStats');
+    
+    if (!statsContainer) return;
+    
+    statsContainer.innerHTML = `
+        <div class="stat-card">
+            <h3>Total de Confirmações</h3>
+            <div class="stat-number">${stats.total}</div>
+            <small style="color: #666; font-size: 0.8rem;">registros</small>
+        </div>
+        <div class="stat-card">
+            <h3>Parte da Noiva</h3>
+            <div class="stat-number">${stats.countByType.noiva || 0}</div>
+            <small style="color: #666; font-size: 0.8rem;">convidados</small>
+        </div>
+        <div class="stat-card">
+            <h3>Parte do Noivo</h3>
+            <div class="stat-number">${stats.countByType.noivo || 0}</div>
+            <small style="color: #666; font-size: 0.8rem;">convidados</small>
+        </div>
+        <div class="stat-card">
+            <h3>Estimativa Total</h3>
+            <div class="stat-number">${stats.estimatedTotal}</div>
+            <small style="color: #666; font-size: 0.8rem;">pessoas (com acompanhantes)</small>
+        </div>
+        <div class="stat-card">
+            <h3>Últimos 7 Dias</h3>
+            <div class="stat-number">${stats.last7Days}</div>
+            <small style="color: #666; font-size: 0.8rem;">novas confirmações</small>
+        </div>
+        <div class="stat-card">
+            <h3>Com Acompanhante</h3>
+            <div class="stat-number">${stats.withAccompaniment}</div>
+            <small style="color: #666; font-size: 0.8rem;">confirmações</small>
+        </div>
+    `;
+    
+    // Atualizar lista de convidados
+    displayGuestList(stats.confirmations);
+    
+    // Atualizar timestamp
+    document.getElementById('lastUpdate').textContent = `Última atualização: ${new Date().toLocaleTimeString('pt-BR')}`;
 }
 
-async function displayGuestList(guests) {
+function displayGuestList(guests) {
     const guestListContainer = document.getElementById('guestList');
     if (!guestListContainer) return;
     
-    if (guests.length === 0) {
+    if (!guests || guests.length === 0) {
         guestListContainer.innerHTML = '<p class="empty-message">Nenhuma confirmação registrada ainda.</p>';
         return;
     }
     
     // Ordenar por data (mais recente primeiro)
-    const sortedGuests = [...guests].sort((a, b) => 
-        new Date(b.timestamp || b.id) - new Date(a.timestamp || a.id)
-    );
+    const sortedGuests = [...guests].sort((a, b) => {
+        const dateA = new Date(a.Data || a.timestamp || 0);
+        const dateB = new Date(b.Data || b.timestamp || 0);
+        return dateB - dateA;
+    });
     
     guestListContainer.innerHTML = `
         <div style="overflow-x: auto;">
@@ -157,46 +169,62 @@ async function displayGuestList(guests) {
                     <tr>
                         <th>Nome</th>
                         <th>Acompanhante</th>
+                        <th>Telefone</th>
                         <th>Tipo</th>
                         <th>Data da Confirmação</th>
-                        <th>Telefone</th>
+                        <th>WhatsApp</th>
                     </tr>
                 </thead>
                 <tbody>
                     ${sortedGuests.map(guest => `
                         <tr>
-                            <td>${escapeHtml(guest.name)}</td>
-                            <td>${escapeHtml(guest.accompaniment || '-')}</td>
-                            <td><span class="guest-type ${guest.guestType}">${guest.guestType === 'noiva' ? 'Noiva' : 'Noivo'}</span></td>
-                            <td>${formatDate(guest.timestamp || guest.confirmationDate)}</td>
-                            <td>${escapeHtml(guest.phone || '-')}</td>
+                            <td>${escapeHtml(guest.Nome || guest.name || '')}</td>
+                            <td>${escapeHtml(guest.Acompanhante || guest.accompaniment || '-')}</td>
+                            <td>${escapeHtml(guest.Telefone || guest.phone || '-')}</td>
+                            <td>
+                                <span class="guest-type ${(guest.Tipo || guest.guestType || '').toLowerCase()}">
+                                    ${(guest.Tipo || guest.guestType || '').toLowerCase() === 'noiva' ? 'Noiva' : 
+                                      (guest.Tipo || guest.guestType || '').toLowerCase() === 'noivo' ? 'Noivo' : 'Não especificado'}
+                                </span>
+                            </td>
+                            <td>${formatDate(guest.Data || guest.timestamp)}</td>
+                            <td>${guest.WhatsAppEnviado || 'SIM'}</td>
                         </tr>
                     `).join('')}
                 </tbody>
             </table>
         </div>
         <p style="text-align: center; margin-top: 10px; color: #666; font-size: 0.9rem;">
-            Total: ${guests.length} confirmações | Última: ${formatDate(sortedGuests[0]?.timestamp || '')}
+            Total: ${guests.length} confirmações | Mostrando ${Math.min(guests.length, 100)} mais recentes
         </p>
     `;
 }
 
 function formatDate(dateString) {
     if (!dateString) return '-';
+    
     try {
         const date = new Date(dateString);
+        
+        // Verificar se a data é válida
         if (isNaN(date.getTime())) {
-            // Se não for uma data válida, retorna a string original
+            // Tentar parsear formato brasileiro
+            const brDate = dateString.match(/(\d{2})\/(\d{2})\/(\d{4})/);
+            if (brDate) {
+                const [_, day, month, year] = brDate;
+                const newDate = new Date(year, month - 1, day);
+                if (!isNaN(newDate.getTime())) {
+                    return newDate.toLocaleDateString('pt-BR');
+                }
+            }
             return dateString;
         }
-        return date.toLocaleDateString('pt-BR', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric',
+        
+        return date.toLocaleDateString('pt-BR') + ' ' + date.toLocaleTimeString('pt-BR', {
             hour: '2-digit',
             minute: '2-digit'
         });
-    } catch (e) {
+    } catch (error) {
         return dateString;
     }
 }
@@ -210,26 +238,29 @@ function escapeHtml(text) {
 
 async function exportToCSV() {
     try {
-        const confirmations = await fetchConfirmationsFromSheets();
+        showLoading(true);
+        const confirmations = await fetchDataFromGoogleSheets();
         
         if (confirmations.length === 0) {
             alert('Não há dados para exportar.');
+            showLoading(false);
             return;
         }
         
         // Cabeçalhos do CSV
-        const headers = ['Nome', 'Acompanhante', 'Tipo', 'Data da Confirmação', 'Telefone', 'Timestamp'];
+        const headers = ['Data', 'Nome', 'Acompanhante', 'Telefone', 'Tipo', 'WhatsApp Enviado', 'Timestamp'];
         
         // Converter dados para linhas CSV
         const csvRows = [
             headers.join(','),
             ...confirmations.map(conf => [
-                `"${conf.name}"`,
-                `"${conf.accompaniment || ''}"`,
-                `"${conf.guestType === 'noiva' ? 'Parte da Noiva' : 'Parte do Noivo'}"`,
-                `"${formatDate(conf.confirmationDate)}"`,
-                `"${conf.phone || ''}"`,
-                `"${conf.timestamp}"`
+                `"${conf.Data || ''}"`,
+                `"${conf.Nome || conf.name || ''}"`,
+                `"${conf.Acompanhante || conf.accompaniment || ''}"`,
+                `"${conf.Telefone || conf.phone || ''}"`,
+                `"${conf.Tipo || conf.guestType || ''}"`,
+                `"${conf.WhatsAppEnviado || 'SIM'}"`,
+                `"${conf.Timestamp || conf.timestamp || ''}"`
             ].join(','))
         ];
         
@@ -248,135 +279,26 @@ async function exportToCSV() {
         link.click();
         document.body.removeChild(link);
         
+        alert(`CSV exportado com sucesso! Total: ${confirmations.length} registros.`);
+        
     } catch (error) {
-        console.error('Erro ao exportar:', error);
-        alert('Erro ao exportar dados. Tente novamente.');
+        alert('Erro ao exportar CSV: ' + error.message);
+    } finally {
+        showLoading(false);
     }
 }
 
 function printDashboard() {
-    // Abre uma nova janela com relatório formatado
-    window.open('relatorio.html', '_blank');
-}
-
-// Criar arquivo relatorio.html separado para impressão
-async function generateReport() {
-    const stats = await getStatistics();
-    
-    const printWindow = window.open('', '_blank');
-    printWindow.document.write(`
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>Relatório de Confirmações - Noivado Ginelma & Ariclenes</title>
-            <style>
-                body { font-family: Arial, sans-serif; margin: 40px; }
-                h1 { color: #667eea; border-bottom: 2px solid #667eea; padding-bottom: 10px; }
-                .header { text-align: center; margin-bottom: 30px; }
-                .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin: 30px 0; }
-                .stat-box { border: 1px solid #ddd; padding: 20px; text-align: center; border-radius: 8px; }
-                .stat-number { font-size: 2em; font-weight: bold; color: #667eea; }
-                table { width: 100%; border-collapse: collapse; margin-top: 30px; }
-                th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
-                th { background: #f5f5f5; }
-                .footer { margin-top: 50px; text-align: center; color: #666; font-size: 0.9em; }
-            </style>
-        </head>
-        <body>
-            <div class="header">
-                <h1>Relatório de Confirmações</h1>
-                <h2>Noivado Ginelma & Ariclenes</h2>
-                <p>Data: 14 de Fevereiro de 2026</p>
-                <p>Local: Quinta Kabezo, Kilamba, Luanda</p>
-                <p>Gerado em: ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}</p>
-            </div>
-            
-            <div class="stats">
-                <div class="stat-box">
-                    <div>Total de Confirmações</div>
-                    <div class="stat-number">${stats.total}</div>
-                </div>
-                <div class="stat-box">
-                    <div>Parte da Noiva</div>
-                    <div class="stat-number">${stats.countByType.noiva || 0}</div>
-                </div>
-                <div class="stat-box">
-                    <div>Parte do Noivo</div>
-                    <div class="stat-number">${stats.countByType.noivo || 0}</div>
-                </div>
-                <div class="stat-box">
-                    <div>Estimativa Total de Pessoas</div>
-                    <div class="stat-number">${stats.estimatedTotal}</div>
-                    <small>(incluindo acompanhantes)</small>
-                </div>
-            </div>
-            
-            <h3>Lista de Convidados Confirmados (${stats.total})</h3>
-            ${stats.total > 0 ? `
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Nome</th>
-                            <th>Acompanhante</th>
-                            <th>Tipo</th>
-                            <th>Data da Confirmação</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${stats.confirmations.map(guest => `
-                            <tr>
-                                <td>${escapeHtml(guest.name)}</td>
-                                <td>${escapeHtml(guest.accompaniment || '-')}</td>
-                                <td>${guest.guestType === 'noiva' ? 'Parte da Noiva' : 'Parte do Noivo'}</td>
-                                <td>${formatDate(guest.timestamp)}</td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-            ` : '<p>Nenhuma confirmação registrada.</p>'}
-            
-            <div class="footer">
-                <p>Com amor, Ginelma & Ariclenes © ${new Date().getFullYear()}</p>
-                <p>Relatório gerado automaticamente pelo sistema de confirmações</p>
-            </div>
-            
-            <script>
-                window.onload = function() {
-                    window.print();
-                }
-            </script>
-        </body>
-        </html>
-    `);
-    printWindow.document.close();
-}
-
-function clearAllData() {
-    alert('Para limpar os dados, acesse diretamente sua planilha do Google Sheets.\n\nEsta funcionalidade não está disponível para dados remotos.');
+    window.print();
 }
 
 async function refreshDashboard() {
-    const refreshBtn = document.querySelector('.control-button.success');
-    const originalText = refreshBtn.innerHTML;
-    
-    refreshBtn.innerHTML = '<span>⏳</span> Atualizando...';
-    refreshBtn.disabled = true;
-    
     try {
-        await displayStatistics();
-        alert('Dashboard atualizado com sucesso!');
+        const confirmations = await fetchDataFromGoogleSheets();
+        displayStatistics(confirmations);
+        alert(`Dashboard atualizado! Total: ${confirmations.length} confirmações.`);
     } catch (error) {
-        alert('Erro ao atualizar. Verifique sua conexão.');
-    } finally {
-        refreshBtn.innerHTML = originalText;
-        refreshBtn.disabled = false;
-    }
-}
-
-function logout() {
-    if (confirm('Deseja sair do dashboard?')) {
-        sessionStorage.removeItem('adminLoggedIn');
-        window.location.href = 'admin.html';
+        alert('Erro ao atualizar: ' + error.message);
     }
 }
 
@@ -390,7 +312,9 @@ function checkPassword() {
         sessionStorage.setItem('adminLoggedIn', 'true');
         document.getElementById('loginScreen').style.display = 'none';
         document.getElementById('dashboardScreen').style.display = 'block';
-        displayStatistics();
+        
+        // Carregar dados do Google Sheets
+        refreshDashboard();
         
         // Limpar campo de senha
         document.getElementById('adminPassword').value = '';
@@ -400,6 +324,13 @@ function checkPassword() {
         errorElement.style.display = 'block';
         document.getElementById('adminPassword').value = '';
         document.getElementById('adminPassword').focus();
+    }
+}
+
+function logout() {
+    if (confirm('Deseja sair do dashboard?')) {
+        sessionStorage.removeItem('adminLoggedIn');
+        window.location.href = 'admin.html';
     }
 }
 
@@ -427,6 +358,6 @@ document.addEventListener('DOMContentLoaded', function() {
     if (isLoggedIn === 'true') {
         document.getElementById('loginScreen').style.display = 'none';
         document.getElementById('dashboardScreen').style.display = 'block';
-        displayStatistics();
+        refreshDashboard();
     }
 });
